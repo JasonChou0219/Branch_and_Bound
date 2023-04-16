@@ -26,7 +26,7 @@ def main(case_name: str, case_path: str) -> None:
     # run scheduling
     execution_time = 0
     for batch in batches:
-        execution_time = schedule(batch, scheduled_jobs, machines, order_time, beta, threads=12)
+        execution_time = schedule(batch, scheduled_jobs, machines, order_time, beta, end_threads=12)
     print(f"Jobs will be completed in {execution_time / 60} minutes.")
 
     # save and plot scheduling result
@@ -47,8 +47,8 @@ def main(case_name: str, case_path: str) -> None:
 
 
 if __name__ == "__main__":
-    case_name = "case1"
-    case_path = "data/case_1/case_1_A"
+    case_name = "case_4_D"
+    case_path = "data/case_4/case_4_D"
     main(case_name, case_path)
 
 

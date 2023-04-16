@@ -20,11 +20,11 @@ def plot_schedule(scheduled_jobs: List[Job],
     ax.set_yticklabels(machine_names)
     ax.set_ylim(0, len(machines))
 
-    for job in scheduled_jobs:
-        cmap = plt.get_cmap('viridis', len(scheduled_jobs))
-        # color = job.id
-        color = cmap(job.id)
 
+    # color = job.id
+    for job in scheduled_jobs:
+        cmap = plt.get_cmap('viridis', len(scheduled_jobs) + 1)
+        color = cmap(job.id)
         if highlight_job_id is not None:
             if job.id == highlight_job_id:
                 color = 'darkblue'
