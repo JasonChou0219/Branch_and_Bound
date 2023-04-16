@@ -14,19 +14,27 @@ from load import load_case
 from schedule import schedule
 from plot import plot_schedule
 
+
 def main(case_name: str, case_path: str) -> None:
     machines, batches, plot_range = load_case(case_path)
 
     # misc parameters
     current_time = datetime(2023, 3, 25, 9, 0, 0)
-    order_time = current_time + timedelta(hours=1)
+    # order_time = current_time + timedelta(hours=1)
+    order_time = current_time
     beta = 1 * 60
     scheduled_jobs = []
-
+    scheduled_operations = []
+    interval = 1000
     # run scheduling
     execution_time = 0
+    # for batch in batches:
+    #     execution_time = schedule(batch, scheduled_jobs, scheduled_operations, machines, order_time, beta, interval, end_threads=12)
     for batch in batches:
-        execution_time = schedule(batch, scheduled_jobs, machines, order_time, beta, end_threads=12)
+        # while (len(batch.operations) != len(scheduled_operations)):
+        execution_time = schedule(batch, scheduled_jobs, scheduled_operations, machines, order_time, beta, interval, end_threads=12)
+            # update_batch(batch)
+
     print(f"Jobs will be completed in {execution_time / 60} minutes.")
 
     # save and plot scheduling result
@@ -36,9 +44,13 @@ def main(case_name: str, case_path: str) -> None:
     plot_schedule(
         scheduled_jobs,
         machines,
+        current_time,
         xlims=(
-            int((current_time + timedelta(minutes=50)).timestamp()),
-            int((current_time + timedelta(hours=int(plot_range))).timestamp()),
+            # int((current_time + timedelta(minutes=50)).timestamp()),
+            # int((current_time).timestamp()),
+            0,
+            # int((current_time + timedelta(hours=int(plot_range))).timestamp()),
+            10000,
         ),
         size=(800, 600),
     )

@@ -7,17 +7,20 @@ from AllTypes import Job, Batch, Machine, Operation, TCMB
 import pulp
 
 #set schedule according to reschedule interval
-def set_schedule(batch: Batch, S: List[int], E: List[int]) -> None:
-    for i, operation in enumerate(batch.operations):
-        operation.S = S[i]
-        operation.E = E[i]
+# def set_schedule(batch: Batch, S: List[int], E: List[int]) -> None:
+#     for i, operation in enumerate(batch.operations):
+#         operation.S = S[i]
+#         operation.E = E[i]
+
 
 # need scheduled opeartions
 def schedule(batch: Batch,
              scheduled_jobs: List[Job],
+             scheduled_operations: List[Operation],
              machines: List[Machine],
              order_time: datetime,
              beta: int, # time window for a machine, little gap between operations
+             interval: int, # reschedule interval
              end_threads: int = 1,
              max_solutions: int = -1,
              big_m: float = 1e8 # large constant to enforce logical condition
@@ -51,7 +54,8 @@ def schedule(batch: Batch,
     t0 = int(order_time.timestamp())
 
     # scheduled operations
-    scheduled_operations = [op for job in scheduled_jobs for op in job.operations]
+    # scheduled_operations = [op for job in scheduled_jobs for op in job.operations]
+    scheduled_operations = [op for op in scheduled_operations]
     N_scheduled = len(scheduled_operations)
     tau_schduled = [op.tau for op in scheduled_operations]
     S_scheduled = [op.S - t0 for op in scheduled_operations]
@@ -105,11 +109,11 @@ def schedule(batch: Batch,
         compatible = [m for m in range(M) if C[op] == T[m]]
         scheduler += xsum(F[op, m] for m in compatible) == 1
 
-    #**
+    #??
     # 2-2: a shared-machine precedence relationship exists between each pair of operations sharing the common machine
     for m in range(M):
         for op1 in range(N):
-            #**
+            #??
             for op2 in range(op1, N):
                 if op1 != op2 and C[op1] == C[op2] == T[m]:
                     # AND circuit
@@ -133,7 +137,7 @@ def schedule(batch: Batch,
                 if P[op1][op2] == 1 and C[op1] == C[op2] == T[m]:
                     scheduler += Q[op2, op1, m] == 0
 
-    #***
+    #??
     # 2-5: a machine can process at most one operation at a time
     for op1 in range(N):
         for op2 in range(N):
@@ -148,7 +152,7 @@ def schedule(batch: Batch,
             if P[op1][op2] == 1:
                 scheduler += S[op1] + tau[op1] <= S[op2]
 
-    # **
+    # ??
     # 3-1: the absolute value of the difference between two operation boundaries is less than or equal to the maximum
     #      tolerable difference. There are four cases depending on the combination of boundaries
     for con in constraints:
@@ -209,21 +213,42 @@ def schedule(batch: Batch,
 
     # Time to start each operation
     # S = [int(round(S[a].varValue)) + t0 for a in range(N)] 
-    S = [int(round(S[a].x)) + t0 for a in range(N)]  # rounding might cause a bug in the future
+    # S = [int(round(S[op].x)) + t0 for op in range(N)]  # rounding might cause a bug in the future
+    S = [int(round(S[op].x)) for op in range(N)] 
+    # # Machines selected for each operation
+    # E = [0] * N
+    # for op in range(N):
+    #     for m in range(M):
+    #         if C[op] == T[m] and F[op, m].x == 1:
+    #             E[op] = m
 
-
-    # Machines selected for each operation
+    #interval schedule
     E = [0] * N
     for op in range(N):
         for m in range(M):
-            if C[op] == T[m] and F[op, m].x == 1:
+            if C[op] == T[m] and F[op, m].x == 1 and S[op] < interval:
                 E[op] = m
+    S = [x + t0 for x in S]
 
-    set_schedule(batch, S, E)
-
-    scheduled_jobs.extend(batch.jobs)
+    for i, operation in enumerate(batch.operations):
+        if (S[i] - t0 < interval):
+            operation.S = S[i]
+            scheduled_operations.append(operation)
+            print(f"Operation scheduled: {i} .")
+        operation.E = E[i]
+    # set_schedule(batch, S, E)
+    for job in batch.jobs:
+        for op in job.operations:
+            if (op not in scheduled_operations):
+                continue
+        # scheduled_jobs.extend(batch.jobs)
+        # scheduled_jobs.extend(job)
+        scheduled_jobs.append(job)
 
     # return pulp.value(Omega)
+
+    # remained to update state accroding to interval schedule
+
     return Omega.x
 
 

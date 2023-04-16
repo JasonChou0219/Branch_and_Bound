@@ -8,9 +8,11 @@ def epochsec2datetime(epochsec: int) -> datetime:
 
 def plot_schedule(scheduled_jobs: List[Job],
                   machines: List[Machine],
+                  current_time: int,
                   xlims: Tuple[float, float] = (-float('inf'), float('inf')),
                   highlight_job_id: Optional[int] = None,
-                  size: Tuple[int, int] = (600, 400)):
+                  size: Tuple[int, int] = (600, 400),
+                  ):
 
     fig, ax = plt.subplots(figsize=(size[0] / 80, size[1] / 80))
 
@@ -33,13 +35,14 @@ def plot_schedule(scheduled_jobs: List[Job],
 
         for op in job.operations:
             # xs = [epochsec2datetime(op.S), epochsec2datetime(op.end_time())]
-            xs = [op.S, op.end_time()]
+            # xs = [op.S, op.end_time()]
+            xs = [op.S - int(current_time.timestamp()), op.end_time() - int(current_time.timestamp())]
             ys = [machines[op.E].name] * 2
             ax.plot(xs, ys, linewidth=4, color=color)
 
         for edge in job.dag:
             # xs = [epochsec2datetime(job.operations[edge[0] - 1].end_time()), epochsec2datetime(job.operations[edge[1] - 1].S)]
-            xs = [job.operations[edge[0] - 1].end_time(), job.operations[edge[1] - 1].S]
+            xs = [job.operations[edge[0] - 1].end_time() - int(current_time.timestamp()), job.operations[edge[1] - 1].S - int(current_time.timestamp())]
             ys = [machines[job.operations[edge[0] - 1].E].name, machines[job.operations[edge[1] - 1].E].name]
             ax.plot(xs, ys, linestyle='--', color='gray')
 
