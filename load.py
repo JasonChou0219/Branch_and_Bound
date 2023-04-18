@@ -21,6 +21,7 @@ def load_case(case_path: str) -> Tuple[List[Machine], List[Batch], int]:
 
     jobs = [Job(job_id, [], [], []) for job_id in range(1, n_job + 1)]
 
+    # remain: a map between opration and job
     for job_id in range(1, n_job + 1):
         for _, row in df_operations.iterrows():
             jobs[job_id - 1].operations.append(
@@ -32,10 +33,11 @@ def load_case(case_path: str) -> Tuple[List[Machine], List[Batch], int]:
                     row["Note"],
                 )
             )
-
+        #for separate job
         for _, row in df_dependency.iterrows():
             jobs[job_id - 1].dag.append((row["Operation_ID_1"], row["Operation_ID_2"]))
 
+        # only end -> start
         for _, row in df_tcmb.iterrows():
             jobs[job_id - 1].constraints.append(
                 TCMB(
@@ -49,6 +51,7 @@ def load_case(case_path: str) -> Tuple[List[Machine], List[Batch], int]:
 
     # create batch
     batches = []
+    #schdule separate job sequentially
     if is_sequential:
         for job_id in range(1, n_job + 1):
             batches.append(Batch([jobs[job_id - 1]]))

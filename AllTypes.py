@@ -33,6 +33,7 @@ class TCMB:
     """
     Time constraint by mutual boundaries
     """
+    # should be different for each job 
     def __init__(self, operation_id_1: int, boundary_1: str, operation_id_2: int, boundary_2: str, alpha: int):
         self.operation_id_1 = operation_id_1  # operation id 1
         self.boundary_1 = boundary_1  # boundary of operation 1 (begin or end)
@@ -101,6 +102,8 @@ class Batch:
         P = [[False for _ in range(self.get_N())] for _ in range(self.get_N())]
         #iterate through all unfinished jobs, finish the code
 
+        flag = False;
+
         for job in self.unfinished_jobs:
             # edge0 -> op1, edge1-> op2
             for edge in job.dag:
@@ -114,7 +117,8 @@ class Batch:
                     unshceduled_op1 = self.unscheduled_operations.index(op1)
                     unshceduled_op2 = self.unscheduled_operations.index(op2)
                     P[unshceduled_op1][unshceduled_op2] = True
-
+                    # print(f"operaetion {global_op1} is precedent to operation {global_op2} !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                    flag = True
 
                     # P[self.operation_indices[job.id, edge[0]] - 1][self.operation_indices[job.id, edge[1]] - 1] = True
                 # i = self.operation_indices[job.id, edge[0]] - 1
@@ -122,8 +126,10 @@ class Batch:
                 # print(f"Trying to access P[{i}][{j}]")
                 # P[i][j] = True
                 # P : unscheduled x unscheduled
-
                 # P[self.operation_indices[job.id, edge[0]] - 1][self.operation_indices[job.id, edge[1]] - 1] = True
+        if flag == False:
+            print(f"the number of unfinished_jobs is {len(self.unfinished_jobs)} **********************************************")
+            # print("Never reach here********************************************************")
         return P
     
 
@@ -207,8 +213,8 @@ class Batch:
         for op in scheduled_operations:
             if op in self.unscheduled_operations:
                 self.unscheduled_operations.remove(op)
-        print(f"the size of scheduled operations is {len(scheduled_operations)}  update  .") 
-        print(f"the size of scheduled jobs is {len(scheduled_jobs)}   update  .") 
+        # print(f"the size of scheduled operations is {len(scheduled_operations)}  update  .") 
+        # print(f"the size of scheduled jobs is {len(scheduled_jobs)}   update  .") 
     
 
 
