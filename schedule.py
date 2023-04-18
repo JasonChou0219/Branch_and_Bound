@@ -5,6 +5,8 @@ from typing import List, Optional
 from AllTypes import Job, Batch, Machine, Operation, TCMB
 
 import pulp
+from typing import Tuple
+
 
 #set schedule according to reschedule interval
 # def set_schedule(batch: Batch, S: List[int], E: List[int]) -> None:
@@ -15,16 +17,16 @@ import pulp
 
 # need scheduled opeartions
 def schedule(batch: Batch,
+             machines: List[Machine],
              scheduled_jobs: List[Job],
              scheduled_operations: List[Operation],
-             machines: List[Machine],
-             order_time: datetime,
+             start_time: datetime,
              beta: int, # time window for a machine, little gap between operations
              interval: int, # reschedule interval
              end_threads: int = 1,
              max_solutions: int = -1,
              big_m: float = 1e8 # large constant to enforce logical condition
-             ) -> None:
+             ) -> Tuple[int, List[Job], List[Operation]]:
 
     ################
     # Model
@@ -50,8 +52,8 @@ def schedule(batch: Batch,
     # TCMB
     constraints = batch.get_constraints()
 
-    # convert order_time to epoch sec
-    t0 = int(order_time.timestamp())
+    # convert start_time to epoch sec
+    t0 = int(start_time.timestamp())
 
     # scheduled operations
     # scheduled_operations = [op for job in scheduled_jobs for op in job.operations]
@@ -183,7 +185,7 @@ def schedule(batch: Batch,
     for op1 in range(N):
         for op_scheduled in range(N_scheduled):
             if T[E_scheduled[op_scheduled]] == C[op1]:
-                scheduler += S[op1] + tau[op1] + beta <= S_scheduled[op_scheduled] + big_m * (1 - R_precede[a, op_scheduled])
+                scheduler += S[op1] + tau[op1] + beta <= S_scheduled[op_scheduled] + big_m * (1 - R_precede[op1, op_scheduled])
 
     # 4-3: a machine can process at most one operation at a time (case: an operation in a new job follows another
     #      operation in a previously scheduled job)
@@ -214,7 +216,7 @@ def schedule(batch: Batch,
     # Time to start each operation
     # S = [int(round(S[a].varValue)) + t0 for a in range(N)] 
     # S = [int(round(S[op].x)) + t0 for op in range(N)]  # rounding might cause a bug in the future
-    S = [int(round(S[op].x)) for op in range(N)] 
+    S = [int(round(S[i].x)) for i in range(N)] 
     # # Machines selected for each operation
     # E = [0] * N
     # for op in range(N):
@@ -227,17 +229,18 @@ def schedule(batch: Batch,
     for op in range(N):
         for m in range(M):
             if C[op] == T[m] and F[op, m].x == 1 and S[op] < interval:
-                E[op] = m
+                E[op] = m 
     S = [x + t0 for x in S]
 
-    for i, operation in enumerate(batch.operations):
+    for i, operation in enumerate(batch.unscheduled_operations):
         if (S[i] - t0 < interval):
             operation.S = S[i]
             scheduled_operations.append(operation)
             print(f"Operation scheduled: {i} .")
         operation.E = E[i]
+    # print(f"the size of scheduled operations is {len(scheduled_operations)} .") 
     # set_schedule(batch, S, E)
-    for job in batch.jobs:
+    for job in batch.unfinished_jobs:
         for op in job.operations:
             if (op not in scheduled_operations):
                 continue
@@ -245,11 +248,11 @@ def schedule(batch: Batch,
         # scheduled_jobs.extend(job)
         scheduled_jobs.append(job)
 
-    # return pulp.value(Omega)
+    batch.update_batch(scheduled_jobs, scheduled_operations)
+    print(f"the size of scheduled operations is {len(scheduled_operations)} : schdule_end .") 
+    print(f"the size of scheduled jobs is {len(scheduled_jobs)} : schdule_end .")
 
-    # remained to update state accroding to interval schedule
-
-    return Omega.x
+    return Omega.x, scheduled_jobs, scheduled_operations
 
 
 

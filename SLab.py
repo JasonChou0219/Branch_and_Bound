@@ -19,32 +19,44 @@ def main(case_name: str, case_path: str) -> None:
     machines, batches, plot_range = load_case(case_path)
 
     # misc parameters
-    current_time = datetime(2023, 3, 25, 9, 0, 0)
-    # order_time = current_time + timedelta(hours=1)
-    order_time = current_time
+    init_time = datetime(2023, 3, 25, 9, 0, 0)
+    # start_time = current_time + timedelta(hours=1)
+    start_time = init_time
     beta = 1 * 60
     scheduled_jobs = []
     scheduled_operations = []
-    interval = 1000
+    interval = 2000
     # run scheduling
-    execution_time = 0
+    current_time = 0
     # for batch in batches:
-    #     execution_time = schedule(batch, scheduled_jobs, scheduled_operations, machines, order_time, beta, interval, end_threads=12)
-    for batch in batches:
-        # while (len(batch.operations) != len(scheduled_operations)):
-        execution_time = schedule(batch, scheduled_jobs, scheduled_operations, machines, order_time, beta, interval, end_threads=12)
-            # update_batch(batch)
+    #     execution_time = schedule(batch, scheduled_jobs, scheduled_operations, machines, start_time, beta, interval, end_threads=12)
+    # for batch in batches:
+    batch = batches[0]
 
-    print(f"Jobs will be completed in {execution_time / 60} minutes.")
+        # while (len(batch.operations) != len(scheduled_operations)):
+        # print(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!the number of opeartions is {batch.get_N()}")
+    execution_time, scheduled_jobs, scheduled_operations = schedule(batch, machines, scheduled_jobs, scheduled_operations, start_time, beta, interval, end_threads=12)
+    current_time += execution_time
+        # print(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!the number of opeartions is {batch.get_N()}")
+    execution_time, scheduled_jobs, scheduled_operations = schedule(batch, machines, scheduled_jobs, scheduled_operations, start_time + timedelta(seconds = interval), beta, interval, end_threads=12)
+    current_time += execution_time
+            # update_batch(batch)
+    
+    # print(len(scheduled_operations))
+    for op in scheduled_operations:
+        print(f"the machine type of operation{batch.operations.index(op)} is : {op.E} : {machines[op.E].name}!!!!!!!!!!!!!!!!!!")
+
+    print(f"Jobs will be completed in {current_time / 60} minutes.")
 
     # save and plot scheduling result
     with open(os.path.join(case_path, f"{case_name}_result"), 'wb') as f:
-        pickle.dump((scheduled_jobs, machines, current_time), f)
+        pickle.dump((scheduled_jobs, machines, start_time), f)
 
     plot_schedule(
         scheduled_jobs,
+        scheduled_operations, 
         machines,
-        current_time,
+        start_time,
         xlims=(
             # int((current_time + timedelta(minutes=50)).timestamp()),
             # int((current_time).timestamp()),
@@ -61,6 +73,8 @@ def main(case_name: str, case_path: str) -> None:
 if __name__ == "__main__":
     case_name = "case_4_D"
     case_path = "data/case_4/case_4_D"
+    # case_name = "case_1_A" 
+    # case_path = "data/case_1/case_1_A"
     main(case_name, case_path)
 
 
