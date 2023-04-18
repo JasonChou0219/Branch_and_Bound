@@ -32,15 +32,17 @@ def main(case_name: str, case_path: str) -> None:
     #     execution_time = schedule(batch, scheduled_jobs, scheduled_operations, machines, start_time, beta, interval, end_threads=12)
     # for batch in batches:
     batch = batches[0]
-
+    while batch.get_N() > 0 and len(scheduled_operations) < len(batch.operations):
         # while (len(batch.operations) != len(scheduled_operations)):
         # print(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!the number of opeartions is {batch.get_N()}")
-    execution_time, batch, scheduled_jobs, scheduled_operations = schedule(batch, machines, scheduled_jobs, scheduled_operations, init_time, start_time, beta, interval, end_threads=12)
+        execution_time, scheduled_jobs, scheduled_operations = schedule(batch, machines, scheduled_jobs, scheduled_operations, init_time, start_time, beta, interval, end_threads=12)
+        start_time += timedelta(seconds = interval)
+        # print(f"the size of scheduled operations is {len(scheduled_operations)}")
     # current_time += execution_time
     # print (f"execution time is {execution_time} !!!!!!!! ")
     # print (f"interval is {interval} !!!!!!!!!!!!")
         # print(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!the number of opeartions is {batch.get_N()}")
-    execution_time, batch, scheduled_jobs, scheduled_operations = schedule(batch, machines, scheduled_jobs, scheduled_operations, init_time, start_time + timedelta(seconds = interval), beta, interval, end_threads=12)
+    # execution_time, scheduled_jobs, scheduled_operations = schedule(batch, machines, scheduled_jobs, scheduled_operations, init_time, start_time + timedelta(seconds = interval), beta, interval, end_threads=12)
     # current_time += execution_time
             # update_batch(batch)
     
@@ -52,14 +54,14 @@ def main(case_name: str, case_path: str) -> None:
 
     # save and plot scheduling result
     with open(os.path.join(case_path, f"{case_name}_result"), 'wb') as f:
-        pickle.dump((scheduled_jobs, machines, start_time), f)
+        pickle.dump((scheduled_jobs, machines, init_time), f)
 
     plot_schedule(
         batch.jobs,
         batch.operations,
         scheduled_operations, 
         machines,
-        start_time,
+        init_time,
         xlims=(
             # int((current_time + timedelta(minutes=50)).timestamp()),
             # int((current_time).timestamp()),

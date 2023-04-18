@@ -297,7 +297,7 @@ def schedule(batch: Batch,
     # print(f"the size of scheduled operations is {len(scheduled_operations)} : schdule_end .") 
     # print(f"the size of scheduled jobs is {len(scheduled_jobs)} : schdule_end .")
 
-    return Omega.x, batch, scheduled_jobs, scheduled_operations
+    return Omega.x, scheduled_jobs, scheduled_operations
 
 
 
