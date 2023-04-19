@@ -5,12 +5,12 @@ from AllTypes import Machine, Batch, Operation, TCMB, Job
 import re
 import numpy as np
 
-def is_positive_integer(value):
-    return (isinstance(value, int) or isinstance(value, np.int64)) and value > 0
-def is_zero_or_one(value):
-    return (isinstance(value, int) or isinstance(value, np.int64)) and (value == 0 or value == 1)
+def is_non_negative(value):
+    return (isinstance(value, int) or isinstance(value, np.int64)) and value >= 0
+# def is_zero_or_one(value):
+#     return (isinstance(value, int) or isinstance(value, np.int64)) and (value == 0 or value == 1)
 
-# def is_positive_integer(s: str) -> bool:
+# def is_non_negative(s: str) -> bool:
 #     pattern = r"^\d+$"
 #     return bool(re.match(pattern, s))
 
@@ -19,18 +19,18 @@ def is_machine_name_valid(name):
     return isinstance(name, str) and bool(re.match(r"^Machine [A-Za-z0-9\-]+$", name))
 
 def check_config(df_config):
-    if not is_positive_integer(df_config.loc[0, "N_job"]):
+    if not is_non_negative(df_config.loc[0, "N_job"]):
         raise ValueError("Invalid input: N_job must be a positive integer")
 
-    if not is_zero_or_one(df_config.loc[0, "Sequential"]):
+    if not is_non_negative(df_config.loc[0, "Sequential"]):
         raise ValueError("Invalid input: Sequential must be 0 or 1")
 
-    if not is_positive_integer(df_config.loc[0, "Plot_range"]):
+    if not is_non_negative(df_config.loc[0, "Plot_range"]):
         raise ValueError("Invalid input: Plot_range must be a positive integer")
 
 def check_machines(df_machines):
     for _, row in df_machines.iterrows():
-        if not is_positive_integer(row["Machine_type"]):
+        if not is_non_negative(row["Machine_type"]):
             raise ValueError("Invalid input: Machine_type must be a positive integer")
 
         if not is_machine_name_valid(row["Machine_name"]):
@@ -38,51 +38,59 @@ def check_machines(df_machines):
 
 def check_operations(df_operations):
     for _, row in df_operations.iterrows():
-        if not is_positive_integer(row["Operation_ID"]):
+        if not is_non_negative(row["Operation_ID"]):
             raise ValueError("Invalid input: Operation_ID must be a positive integer")
 
-        if not is_positive_integer(row["Compatible_machine"]):
+        if not is_non_negative(row["Compatible_machine"]):
             raise ValueError("Invalid input: Compatible_machine must be a positive integer")
 
-        if not is_positive_integer(row["Processing_time"]):
+        if not is_non_negative(row["Processing_time"]):
             raise ValueError("Invalid input: Processing_time must be a positive integer")
+def check_arrival_time(df_arrival_time):
+    for _, row in df_arrival_time.iterrows():
+        if not is_non_negative(row["Job_Arrival_Time"]):
+            raise ValueError("Invalid input: Job_Arrival_time must be a positive integer")
 
 def check_dependency(df_dependency):
     for _, row in df_dependency.iterrows():
-        if not is_positive_integer(row["Operation_ID_1"]):
+        if not is_non_negative(row["Operation_ID_1"]):
             raise ValueError("Invalid input: Operation_ID_1 must be a positive integer")
 
-        if not is_positive_integer(row["Operation_ID_2"]):
+        if not is_non_negative(row["Operation_ID_2"]):
             raise ValueError("Invalid input: Operation_ID_2 must be a positive integer")
 
 def check_tcmb(df_tcmb):
     for _, row in df_tcmb.iterrows():
-        if not is_positive_integer(row["Operation_ID_1"]):
+        if not is_non_negative(row["Operation_ID_1"]):
             raise ValueError("Invalid input: Operation_ID_1 must be a positive integer")
 
-        if not is_positive_integer(row["Operation_ID_2"]):
+        if not is_non_negative(row["Operation_ID_2"]):
             raise ValueError("Invalid input: Operation_ID_2 must be a positive integer")
 
-        if not is_positive_integer(row["Time_constraint"]):
+        if not is_non_negative(row["Time_constraint"]):
             raise ValueError("Invalid input: Time_constraint must be a positive integer")
 
 
 
-def print_info(batches: List[Batch]) -> None:
-    for batch in batches:
-        for job in batch.jobs:
-            print("job_id:", job.id)
-            print("operations:")
-            for operation in job.operations:
-                print(operation.id)
-            print("dag:")
-            for edge in job.dag:
-                print(edge)
-            print("constraints:")
-            for constraint in job.constraints:
-                print(f"op1 is : {constraint.operation_id_1}")
-                print(f"op2 is : {constraint.operation_id_2}")
-                print(f"constraint is : {constraint.alpha}")
+def print_info(batch: Batch) -> None:
+    for job in batch.jobs:
+        print ("============================================================")
+        print("Information of job_id:", job.id)
+        op_str = "Operations: "
+        for operation in job.operations:
+            op_str += str(operation.id) + " "
+        print (op_str)
+        dag_str = "DAG: "
+        for edge in job.dag:
+            dag_str += "(" + str(edge[0]) + "," + str(edge[1]) + ")" + " "
+        print (dag_str)
+        con_str = "Constrains: \n"
+        for constraint in job.constraints:
+            con_str += "(" + str(constraint.operation_id_1) + "," + str(constraint.operation_id_2) + ")" + ":" + str(constraint.alpha) + " "
+        print (con_str)
+        print("arrival_time:", job.arrival_time)
+        print("activate", job.activate)
+        print ("============================================================")
 
 
 # remain to be rewritten
@@ -102,9 +110,12 @@ def load_case(case_path: str) -> Tuple[List[Machine], List[Batch], int]:
     # job definitions
     df_operations = pd.read_csv(os.path.join(case_path, "operations.tsv"), delimiter="\t")
     check_operations(df_operations)
+
+    df_arrival_time = pd.read_csv(os.path.join(case_path, f"job/arrival_time.tsv"), delimiter="\t")
+    check_arrival_time(df_arrival_time)
     # df_dependency = pd.read_csv(os.path.join(case_path, "dependency.tsv"), delimiter="\t")
     # df_tcmb = pd.read_csv(os.path.join(case_path, "tcmb.tsv"), delimiter="\t")
-    jobs = [Job(job_id, [], [], []) for job_id in range(1, n_job + 1)]
+    jobs = [Job(job_id, [], [], [], df_arrival_time.loc[job_id - 1 , "Job_Arrival_Time"] * 60, False) for job_id in range(1, n_job + 1)]
 
     # remain: a map between opration and job
     # for job_id in range(1, n_job + 1):
@@ -178,39 +189,39 @@ def load_case(case_path: str) -> Tuple[List[Machine], List[Batch], int]:
             )
 
 
-    # create batch
-    batches = []
+    batch = Batch(jobs)
     #schdule separate job sequentially
-    if is_sequential:
-        for job_id in range(1, n_job + 1):
-            batches.append(Batch([jobs[job_id - 1]]))
-    else:
-        batches.append(Batch(jobs))
-    print_info(batches)
-    return machines, batches, plot_range
+    # if is_sequential:
+    #     for job_id in range(1, n_job + 1):
+    #         batches.append(Batch([jobs[job_id - 1]]))
+    # else:
+    #     batches.append(Batch(jobs))
+    # print_info(batches)
+    print_info(batch)
+    return machines, batch, plot_range
 
 
 def main():
     case_path = "data/case_4/case_4_D"
-    machines, batches, plot_range = load_case(case_path)
+    machines, batch, plot_range = load_case(case_path)
     # print("machines:", machines)
     # print("batches:", batches)
     # print("plot_range:", plot_range)
 
-    for batch in batches:
-        for job in batch.jobs:
-            print("job_id:", job.id)
-            print("operations:")
-            for operation in job.operations:
-                print(operation.id)
-            print("dag:")
-            for edge in job.dag:
-                print(edge)
-            print("constraints:")
-            for constraint in job.constraints:
-                print(f"op1 is : {constraint.operation_id_1}")
-                print(f"op2 is : {constraint.operation_id_2}")
-                print(f"constraint is : {constraint.alpha}")
+    # for batch in batches:
+    #     for job in batch.jobs:
+    #         print("job_id:", job.id)
+    #         print("operations:")
+    #         for operation in job.operations:
+    #             print(operation.id)
+    #         print("dag:")
+    #         for edge in job.dag:
+    #             print(edge)
+    #         print("constraints:")
+    #         for constraint in job.constraints:
+    #             print(f"op1 is : {constraint.operation_id_1}")
+    #             print(f"op2 is : {constraint.operation_id_2}")
+    #             print(f"constraint is : {constraint.alpha}")
         #     for value in row:
         #         print(value)
         # break

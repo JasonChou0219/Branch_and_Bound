@@ -49,11 +49,13 @@ class Job:
     """
     Job definition, containing a series of operations, dependency graph among operations, and TCMB.
     """
-    def __init__(self, id: int, operations: List[Operation], dag: List[Tuple[int, int]], constraints: List[TCMB]):
+    def __init__(self, id: int, operations: List[Operation], dag: List[Tuple[int, int]], constraints: List[TCMB], arrival_time: int, activate: bool):
         self.id = id  # job id
         self.operations = operations  # list of operations
         self.dag = dag  # operation dependency graph
         self.constraints = constraints  # time constraint by mutual boundaries
+        self.arrival_time = arrival_time  # arrival time of the job
+        self.activate = activate  # whether the job is activated
 
 class Batch:
     """
@@ -67,20 +69,20 @@ class Batch:
         self.unscheduled_operations = []    # unscheduled operations
         self.unfinished_jobs = []  # unfinished jobs
     
-        for job in jobs:
-            for op in job.operations:
-                self.operations.append(op)
-                self.unscheduled_operations.append(op)
-                #operation index is gloabl including shceudled operations
-                #【job.id, op.id】 -> [0, len -1] map
-                # len(self.opreations) change as new op added
-                # start from 1 -> n-1
-                self.operation_indices[job.id, op.id] = len(self.operations)
-                # print (f"job_id : {job.id}")
-                # print (f"op_id : {op.id}")
-                # print (f"operation_indices : {self.operation_indices[job.id, op.id]}")
-            # append unfished job into unfinished_jobs
-            self.unfinished_jobs.append(job)
+        # for job in jobs:
+        #     for op in job.operations:
+        #         self.operations.append(op)
+        #         self.unscheduled_operations.append(op)
+        #         #operation index is gloabl including shceudled operations
+        #         #【job.id, op.id】 -> [0, len -1] map
+        #         # len(self.opreations) change as new op added
+        #         # start from 1 -> n-1
+        #         self.operation_indices[job.id, op.id] = len(self.operations)
+        #         # print (f"job_id : {job.id}")
+        #         # print (f"op_id : {op.id}")
+        #         # print (f"operation_indices : {self.operation_indices[job.id, op.id]}")
+        #     # append unfished job into unfinished_jobs
+        #     self.unfinished_jobs.append(job)
         
 
     def get_N(self) -> int:
@@ -254,7 +256,29 @@ class Batch:
         # print(f"the size of scheduled operations is {len(scheduled_operations)}  update  .") 
         # print(f"the size of scheduled jobs is {len(scheduled_jobs)}   update  .") 
     
+    def activate_jobs(self, init_time: int, start_time:int) -> None:
+        for job in self.jobs:
+            if (job.arrival_time +int(init_time.timestamp())) <= int(start_time.timestamp()) and job.activate == False:
+                job.activate = True
+                for op in job.operations:
+                    self.operations.append(op)
+                    self.unscheduled_operations.append(op)
+                    #operation index is gloabl including shceudled operations
+                    #【job.id, op.id】 -> [0, len -1] map
+                    # len(self.opreations) change as new op added
+                    # start from 1 -> n-1
+                    self.operation_indices[job.id, op.id] = len(self.operations)
+                    # print (f"job_id : {job.id}")
+                    # print (f"op_id : {op.id}")
+                    # print (f"operation_indices : {self.operation_indices[job.id, op.id]}")
+                # append unfished job into unfinished_jobs
+                self.unfinished_jobs.append(job)
 
+    def all_activate(self) -> bool:
+        for job in self.jobs:
+            if job.activate == False:
+                return False
+        return True
 
 
 

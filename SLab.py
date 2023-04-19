@@ -16,7 +16,7 @@ from plot import plot_schedule
 
 
 def main(case_name: str, case_path: str) -> None:
-    machines, batches, plot_range = load_case(case_path)
+    machines, batch, plot_range = load_case(case_path)
 
     # misc parameters
     init_time = datetime(2023, 3, 25, 9, 0, 0)
@@ -25,18 +25,20 @@ def main(case_name: str, case_path: str) -> None:
     beta = 1 * 60
     scheduled_jobs = []
     scheduled_operations = []
-    interval = 3000
+    interval = 1000
     # run scheduling
-    current_time = 0
+    # current_time = 0
     # for batch in batches:
     #     execution_time = schedule(batch, scheduled_jobs, scheduled_operations, machines, start_time, beta, interval, end_threads=12)
-    # for batch in batches:
-    batch = batches[0]
-    while batch.get_N() > 0 and len(scheduled_operations) < len(batch.operations):
+    # while batch.get_N() > 0 and len(scheduled_operations) < len(batch.operations):
+    while True:
         # while (len(batch.operations) != len(scheduled_operations)):
         # print(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!the number of opeartions is {batch.get_N()}")
+        batch.activate_jobs(init_time, start_time)
         execution_time, scheduled_jobs, scheduled_operations = schedule(batch, machines, scheduled_jobs, scheduled_operations, init_time, start_time, beta, interval, end_threads=12)
         start_time += timedelta(seconds = interval)
+        if len(scheduled_operations) == len(batch.operations) and batch.all_activate():
+            break
         # print(f"the size of scheduled operations is {len(scheduled_operations)}")
     # current_time += execution_time
     # print (f"execution time is {execution_time} !!!!!!!! ")

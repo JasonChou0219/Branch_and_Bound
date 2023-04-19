@@ -46,7 +46,13 @@ def generate_tcmb(job_num=3):
         # 将结果写入tcmb.tsv文件
         tcmb_df.to_csv(f"tcmb_{i}.tsv", sep="\t", index=False)
 
+def generate_arrival_time(job_num=3):
+    arrival_times = [random.randint(0, 15) for _ in range(job_num)]
+    df = pd.DataFrame({'Job_Arrival_Time': arrival_times})
+    df.to_csv('arrival_time.tsv', sep='\t', index=False)
+
 if __name__ == "__main__":
     generate_dependency()
     generate_tcmb()
+    generate_arrival_time()
 
