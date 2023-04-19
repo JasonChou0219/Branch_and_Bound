@@ -156,15 +156,21 @@ def schedule(batch: Batch,
     for op1 in range(N):
         for op2 in range(N):
             if P[op1][op2] == 1:
+                # print (f"The type of tau_op1 is {type(tau[op1])}")
                 scheduler += S[op1] + tau[op1] <= S[op2]
 
     #remain to be completed
-     # 5-1: the precedence relationship between a pair of operations (scheduled & unscheduled)in a job must not violate the precedence   
+     # -7: the precedence relationship between a pair of operations (scheduled & unscheduled)in a job must not violate the precedence   
     for op_scheduled in range(N_scheduled):
         for op1 in range(N):
             if (batch.unscheduled_operations[op1].job_id == scheduled_operations[op_scheduled].job_id):
-                print (f"The start time is : {scheduled_operations[op_scheduled].S}, duration: {tau_schduled[op_scheduled]}")
-                scheduler += (scheduled_operations[op_scheduled].S - start) + tau_schduled[op_scheduled] <= S[op1]   
+                # print (f"The start time is : {scheduled_operations[op_scheduled].S}, duration: {tau_schduled[op_scheduled]}")
+                # print (f"The type of S is {type(scheduled_operations[op_scheduled].S)}")
+                # print (f"The type of start is {type(start)}")
+                # print (f"The type of tau_schduled is {type(tau_schduled[op_scheduled])}")
+                # print (f"The type of S[] is {type(S[op1])}")
+                # <= 两边都得是model变量
+                scheduler += scheduled_operations[op_scheduled].S - start + tau_schduled[op_scheduled] - S[op1] <= 0
 
     # ??
     # 3-1: the absolute value of the difference between two operation boundaries is less than or equal to the maximum
@@ -191,19 +197,20 @@ def schedule(batch: Batch,
         if op1 in batch.unscheduled_operations and op2 in batch.unscheduled_operations:
             op1_unschduled = batch.unscheduled_operations.index(op1)
             op2_unschduled = batch.unscheduled_operations.index(op2)
-            if con.boundary_1 == "start" and con.boundary_2 == "start":
-                scheduler += S[op1_unschduled] - S[op2_unschduled] <= con.alpha
-                scheduler += S[op2_unschduled] - S[op1_unschduled] <= con.alpha
-            elif con.boundary_1 == "start" and con.boundary_2 == "end":
-                scheduler += S[op1_unschduled] - (S[op2_unschduled] + tau[op2_unschduled]) <= con.alpha
-                scheduler += (S[op2_unschduled] + tau[op2_unschduled]) - S[op1_unschduled] <= con.alpha
-            elif con.boundary_1 == "end" and con.boundary_2 == "start":
-                scheduler += (S[op1_unschduled] + tau[op1_unschduled]) - S[op2_unschduled] <= con.alpha
-                scheduler += S[op2_unschduled] - (S[op1_unschduled] + tau[op1_unschduled]) <= con.alpha
-            elif con.boundary_1 == "end" and con.boundary_2 == "end":
-                scheduler += (S[op1_unschduled] + tau[op1_unschduled]) - (S[op2_unschduled] + tau[op2_unschduled]) <= con.alpha
-                scheduler += (S[op2_unschduled] + tau[op2_unschduled]) - (S[op1_unschduled] + tau[op1_unschduled]) <= con.alpha
-
+            # if con.boundary_1 == "start" and con.boundary_2 == "start":
+            #     scheduler += S[op1_unschduled] - S[op2_unschduled] <= con.alpha
+            #     scheduler += S[op2_unschduled] - S[op1_unschduled] <= con.alpha
+            # elif con.boundary_1 == "start" and con.boundary_2 == "end":
+            #     scheduler += S[op1_unschduled] - (S[op2_unschduled] + tau[op2_unschduled]) <= con.alpha
+            #     scheduler += (S[op2_unschduled] + tau[op2_unschduled]) - S[op1_unschduled] <= con.alpha
+            # elif con.boundary_1 == "end" and con.boundary_2 == "start":
+            #     scheduler += (S[op1_unschduled] + tau[op1_unschduled]) - S[op2_unschduled] <= con.alpha
+            #     scheduler += S[op2_unschduled] - (S[op1_unschduled] + tau[op1_unschduled]) <= con.alpha
+            # elif con.boundary_1 == "end" and con.boundary_2 == "end":
+            #     scheduler += (S[op1_unschduled] + tau[op1_unschduled]) - (S[op2_unschduled] + tau[op2_unschduled]) <= con.alpha
+            #     scheduler += (S[op2_unschduled] + tau[op2_unschduled]) - (S[op1_unschduled] + tau[op1_unschduled]) <= con.alpha
+            scheduler += (S[op1_unschduled] + tau[op1_unschduled]) - S[op2_unschduled] <= con.alpha
+            scheduler += S[op2_unschduled] - (S[op1_unschduled] + tau[op1_unschduled]) <= con.alpha
 
     # 4-1: a shared-machine precedence or following relationship must exist for any pair of operations sharing a
     #      common machine to process them, one of which is in a previously scheduled job and the other is in a new job
@@ -224,7 +231,7 @@ def schedule(batch: Batch,
     for op1 in range(N):
         for op_scheduled in range(N_scheduled):
             if T[E_scheduled[op_scheduled]] == C[op1]:
-                scheduler += S_scheduled[op_scheduled] + tau_schduled[op_scheduled] + beta <= S[op1] + big_m * (1 - R_follow[op1, op_scheduled])
+                scheduler += S_scheduled[op_scheduled] + tau_schduled[op_scheduled] + beta - (S[op1] + big_m * (1 - R_follow[op1, op_scheduled])) <= 0
  
     ################
     # Objective
@@ -291,7 +298,7 @@ def schedule(batch: Batch,
         if all_scheduled:
             scheduled_jobs.append(job)
     
-    print (f"the size of scheduled jobs is {len(scheduled_jobs)} &&&&&&&&&&&&&&&&&&&&&")
+    # print (f"the size of scheduled jobs is {len(scheduled_jobs)} &&&&&&&&&&&&&&&&&&&&&")
 
     batch.update_batch(scheduled_jobs, scheduled_operations)
     # print(f"the size of scheduled operations is {len(scheduled_operations)} : schdule_end .") 

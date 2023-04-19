@@ -34,11 +34,15 @@ class TCMB:
     Time constraint by mutual boundaries
     """
     # should be different for each job 
-    def __init__(self, operation_id_1: int, boundary_1: str, operation_id_2: int, boundary_2: str, alpha: int):
+    # def __init__(self, operation_id_1: int, boundary_1: str, operation_id_2: int, boundary_2: str, alpha: int):
+    #     self.operation_id_1 = operation_id_1  # operation id 1
+    #     self.boundary_1 = boundary_1  # boundary of operation 1 (begin or end)
+    #     self.operation_id_2 = operation_id_2  # operation id 2
+    #     self.boundary_2 = boundary_2  # boundary of operation 2 (begin or end)
+    #     self.alpha = alpha  # maximum difference in time between two boundaries
+    def __init__(self, operation_id_1: int, operation_id_2: int, alpha: int):
         self.operation_id_1 = operation_id_1  # operation id 1
-        self.boundary_1 = boundary_1  # boundary of operation 1 (begin or end)
         self.operation_id_2 = operation_id_2  # operation id 2
-        self.boundary_2 = boundary_2  # boundary of operation 2 (begin or end)
         self.alpha = alpha  # maximum difference in time between two boundaries
 
 class Job:
@@ -72,6 +76,9 @@ class Batch:
                 # len(self.opreations) change as new op added
                 # start from 1 -> n-1
                 self.operation_indices[job.id, op.id] = len(self.operations)
+                # print (f"job_id : {job.id}")
+                # print (f"op_id : {op.id}")
+                # print (f"operation_indices : {self.operation_indices[job.id, op.id]}")
             # append unfished job into unfinished_jobs
             self.unfinished_jobs.append(job)
         
@@ -137,18 +144,49 @@ class Batch:
         """
         get constrains in a batch
         """
+        # constraints = []
+        # for job in self.unfinished_jobs:
+        #     for con in job.constraints:
+        #         constraints.append(
+        #             # TCMB(
+        #             #     self.operation_indices[job.id, con.operation_id_1],
+        #             #     con.boundary_1,
+        #             #     self.operation_indices[job.id, con.operation_id_2],
+        #             #     con.boundary_2,
+        #             #     con.alpha,
+        #             # )
+        #             TCMB(
+        #                 self.operation_indices[job.id, con.operation_id_1],
+        #                 self.operation_indices[job.id, con.operation_id_2],
+        #                 con.alpha,
+        #             )
+        #         )
+
+
+
         constraints = []
         for job in self.unfinished_jobs:
+            count = 0
             for con in job.constraints:
+                key1 = (job.id, con.operation_id_1)
+                key2 = (job.id, con.operation_id_2)
+                # if key1 not in self.operation_indices:
+                    # print(f"Key1 {key1} not found in operation_indices. count = {count}")
+                    # print(f"job_id : {job.id}")
+                    # print(f"op_id : {con.operation_id_1}")
+                # if key2 not in self.operation_indices:
+                    # print(f"Key2 {key2} not found in operation_indices. count = {count}  ")
+                    # print(f"job_id : {job.id}")
+                    # print(f"op_id : {con.operation_id_2}")
+                    
                 constraints.append(
                     TCMB(
-                        self.operation_indices[job.id, con.operation_id_1],
-                        con.boundary_1,
-                        self.operation_indices[job.id, con.operation_id_2],
-                        con.boundary_2,
+                        self.operation_indices[key1],
+                        self.operation_indices[key2],
                         con.alpha,
                     )
                 )
+                count += 1
         return constraints
 
     
