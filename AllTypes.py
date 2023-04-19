@@ -33,13 +33,6 @@ class TCMB:
     """
     Time constraint by mutual boundaries
     """
-    # should be different for each job 
-    # def __init__(self, operation_id_1: int, boundary_1: str, operation_id_2: int, boundary_2: str, alpha: int):
-    #     self.operation_id_1 = operation_id_1  # operation id 1
-    #     self.boundary_1 = boundary_1  # boundary of operation 1 (begin or end)
-    #     self.operation_id_2 = operation_id_2  # operation id 2
-    #     self.boundary_2 = boundary_2  # boundary of operation 2 (begin or end)
-    #     self.alpha = alpha  # maximum difference in time between two boundaries
     def __init__(self, operation_id_1: int, operation_id_2: int, alpha: int):
         self.operation_id_1 = operation_id_1  # operation id 1
         self.operation_id_2 = operation_id_2  # operation id 2
@@ -129,13 +122,6 @@ class Batch:
                     # print(f"operaetion {global_op1} is precedent to operation {global_op2} !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
                     flag = True
 
-                    # P[self.operation_indices[job.id, edge[0]] - 1][self.operation_indices[job.id, edge[1]] - 1] = True
-                # i = self.operation_indices[job.id, edge[0]] - 1
-                # j = self.operation_indices[job.id, edge[1]] - 1
-                # print(f"Trying to access P[{i}][{j}]")
-                # P[i][j] = True
-                # P : unscheduled x unscheduled
-                # P[self.operation_indices[job.id, edge[0]] - 1][self.operation_indices[job.id, edge[1]] - 1] = True
         if flag == False:
             print(f"the number of unfinished_jobs is {len(self.unfinished_jobs)} **********************************************")
             # print("Never reach here********************************************************")
@@ -146,26 +132,6 @@ class Batch:
         """
         get constrains in a batch
         """
-        # constraints = []
-        # for job in self.unfinished_jobs:
-        #     for con in job.constraints:
-        #         constraints.append(
-        #             # TCMB(
-        #             #     self.operation_indices[job.id, con.operation_id_1],
-        #             #     con.boundary_1,
-        #             #     self.operation_indices[job.id, con.operation_id_2],
-        #             #     con.boundary_2,
-        #             #     con.alpha,
-        #             # )
-        #             TCMB(
-        #                 self.operation_indices[job.id, con.operation_id_1],
-        #                 self.operation_indices[job.id, con.operation_id_2],
-        #                 con.alpha,
-        #             )
-        #         )
-
-
-
         constraints = []
         for job in self.unfinished_jobs:
             count = 0
@@ -191,44 +157,6 @@ class Batch:
                 count += 1
         return constraints
 
-    
-
-    # def unscheduled_index_to_global_index(self, unscheduled_index: int) -> int:
-    #     """
-    #     map from unscheduled index to global index
-    #     """
-    #     unschduled_op = self.unscheduled_operations[unscheduled_index]
-    #     return self.operation_indices[unschduled_op.job_id, unschduled_op.id]
-
-    # def global_index_to_unscheduled_index(self, global_index: int) -> int:
-    #     """
-    #     map from global index to unscheduled index
-    #     """
-    #     global_op = self.operations[global_index]
-    #     return self.unscheduled_operations.index(global_op)
-
-
-    # def get_constraints(self) -> List[TCMB]:
-    #     """
-    #     get time constraints in a batch
-    #     """
-    #     constraints = []
-    #     #what about scheduled operations??
-    #     for job in self.jobs:
-    #         for con in job.constraints:
-    #             if self.operations[self.operation_indices[job.id, con.operation_id_1] - 1] in self.unscheduled_operations and self.operations[self.operation_indices[job.id, con.operation_id_2] - 1] in self.unscheduled_operations:
-    #                 constraints.append(
-    #                     TCMB(
-    #                         self.unscheduled_operations.index(self.operations[self.operation_indices[job.id, con.operation_id_1] - 1]) + 1,
-    #                         con.boundary_1,
-    #                         self.unscheduled_operations.index(self.operations[self.operation_indices[job.id, con.operation_id_2] - 1]) + 1,
-    #                         con.boundary_2,
-    #                         con.alpha,
-    #                     )
-    #                 )
-    #     return constraints
-
-
     def set_schedule(self, S: List[int], E: List[int]):
         """
         get schedule plan including start and end time of operations in a batch
@@ -252,9 +180,7 @@ class Batch:
          # Remove scheduled operations from self.unscheduled_operations
         for op in scheduled_operations:
             if op in self.unscheduled_operations:
-                self.unscheduled_operations.remove(op)
-        # print(f"the size of scheduled operations is {len(scheduled_operations)}  update  .") 
-        # print(f"the size of scheduled jobs is {len(scheduled_jobs)}   update  .") 
+                self.unscheduled_operations.remove(op) 
     
     def activate_jobs(self, init_time: int, start_time:int) -> None:
         for job in self.jobs:
@@ -268,9 +194,6 @@ class Batch:
                     # len(self.opreations) change as new op added
                     # start from 1 -> n-1
                     self.operation_indices[job.id, op.id] = len(self.operations)
-                    # print (f"job_id : {job.id}")
-                    # print (f"op_id : {op.id}")
-                    # print (f"operation_indices : {self.operation_indices[job.id, op.id]}")
                 # append unfished job into unfinished_jobs
                 self.unfinished_jobs.append(job)
 
@@ -279,79 +202,3 @@ class Batch:
             if job.activate == False:
                 return False
         return True
-
-
-
-# class Batch:
-#     """
-#     To schedule multiple jobs simultaneously, combine those jobs into a single Batch.
-#     """
-#     def __init__(self, jobs: List[Job]):
-#         # need to store info of unfinished : scheduled_operations in unfinished jobs
-#         self.jobs = jobs  # list of contained jobs
-#         self.operations = []  # all operations in the jobs in a single vector
-#         self.operation_indices = {}  # conversion table from (job_id, op_id_in_job) to op_id_in_batch
-        
-#         for job in jobs:
-#             for op in job.operations:
-#                 self.operations.append(op)
-#                 self.operation_indices[job.id, op.id] = len(self.operations)
-
-#     def get_N(self) -> int:
-#         """
-#         get number of operations in a batch
-#         """
-#         return len(self.operations)
-
-    # def get_P(self) -> List[List[bool]]:
-    #     """
-    #     get operation dependency graph in a batch
-    #     """
-    #     P = [[False for _ in range(self.get_N())] for _ in range(self.get_N())]
-    #     for job in self.jobs:
-    #         for edge in job.dag:
-
-    #             # i = self.operation_indices[job.id, edge[0]] - 1
-    #             # j = self.operation_indices[job.id, edge[1]] - 1
-    #             # print(f"Trying to access P[{i}][{j}]")
-    #             # P[i][j] = True
-    #             P[self.operation_indices[job.id, edge[0]] - 1][self.operation_indices[job.id, edge[1]] - 1] = True
-    #     return P
-    
-#     def get_C(self) -> List[int]:
-#         """
-#         get machine type in a batch
-#         """
-#         return [op.C for op in self.operations]
-
-#     def get_tau(self) -> List[int]:
-#         """
-#         get processing time in a batch
-#         """
-#         return [op.tau for op in self.operations]
-
-#     def get_constraints(self) -> List[TCMB]:
-#         """
-#         get constrains in a batch
-#         """
-#         constraints = []
-#         for job in self.jobs:
-#             for con in job.constraints:
-#                 constraints.append(
-#                     TCMB(
-#                         self.operation_indices[job.id, con.operation_id_1],
-#                         con.boundary_1,
-#                         self.operation_indices[job.id, con.operation_id_2],
-#                         con.boundary_2,
-#                         con.alpha,
-#                     )
-#                 )
-#         return constraints
-    
-#     def set_schedule(self, S: List[int], E: List[int]):
-#         """
-#         get schedule plan including start and end time of operations in a batch
-#         """
-#         for a in range(self.get_N()):
-#             self.operations[a].S = S[a]
-#             self.operations[a].E = E[a]
