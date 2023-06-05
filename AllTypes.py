@@ -122,8 +122,8 @@ class Batch:
                     # print(f"operaetion {global_op1} is precedent to operation {global_op2} !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
                     flag = True
 
-        if flag == False:
-            print(f"the number of unfinished_jobs is {len(self.unfinished_jobs)} **********************************************")
+        # if flag == False:
+        #     print(f"the number of unfinished_jobs is {len(self.unfinished_jobs)} **********************************************")
             # print("Never reach here********************************************************")
         return P
     
@@ -195,6 +195,9 @@ class Batch:
                     # start from 1 -> n-1
                     self.operation_indices[job.id, op.id] = len(self.operations)
                 # append unfished job into unfinished_jobs
+                print(f"the number of unscheduled_operations is {self.get_N()}")
+                print(f"the compatible machines of unscheduled_operations is {self.get_C()}")
+                print(f"the processing time of unscheduled_operations is {self.get_tau()}")
                 self.unfinished_jobs.append(job)
 
     def all_activate(self) -> bool:

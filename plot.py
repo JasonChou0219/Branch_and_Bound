@@ -43,7 +43,8 @@ def plot_schedule(
 
 
     turn = 0
-    
+    x_min = 0
+    x_max = -1
     for job in all_jobs:
         cmap = plt.get_cmap('viridis', len(all_jobs) + 1)
         color = cmap(job.id)
@@ -51,7 +52,9 @@ def plot_schedule(
         for op in job.operations:  
             if op in scheduled_operations:          
                 xs = [op.S - int(init_time.timestamp()), op.end_time() - int(init_time.timestamp())]
+                print(f"the start time of operation {op.id} is {op.S - int(init_time.timestamp())}")
                 ys = [op.E, op.E]
+                print(f"y value of operation {op.id} is {op.E}")
                 ax.plot(xs, ys, linewidth=4, color=color)
                 label = f"{job.id} : {op.S - int(init_time.timestamp())}, {op.end_time() - int(init_time.timestamp())}"
                 if turn == 0:
@@ -68,13 +71,15 @@ def plot_schedule(
                     ys = [op1.E, op2.E]
                     ax.plot(xs, ys, linestyle='--', color='gray')
                     ax.plot(xs, ys, linestyle='--', color='gray')
+                    if op2.end_time() - int(init_time.timestamp()) > x_max:
+                        x_max = op1.end_time() - int(init_time.timestamp())
             except IndexError as e:
                 print(e)
         turn = (turn + 1) % 2
-
+    # ax.set_xlim(x_min, x_max)
     ax.set_title('Scheduling Result')
     ax.set_xlabel('Time')
     ax.set_ylabel('Machine')
     ax.set_xlim(xlims)
 
-    plt.show()
+    # plt.show()

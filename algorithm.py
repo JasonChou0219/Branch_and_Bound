@@ -19,7 +19,7 @@ def main(case_name: str, case_path: str) -> None:
     machines, batch, plot_range = load_case(case_path)
 
     # misc parameters
-    init_time = datetime(2023, 3, 25, 9, 0, 0)
+    init_time = datetime(2023, 6, 4, 9, 0, 0)
     # start_time = current_time + timedelta(hours=1)
     start_time = init_time
     beta = 1 * 60
